@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.Json.Serialization;
+
 
 namespace OODGame.Room
 {
@@ -19,11 +16,15 @@ namespace OODGame.Room
             Initialize();
         }
 
+        public char GetSymbol(int x, int y){
+            return grid[y, x].Symbol;
+        }
+
         private void Initialize()
         {
             for (int i = 0; i < Height; i++)
             {
-                for (int j = 1; j < Width-1; j++)
+                for (int j = 0; j < Width; j++)
                 {
                     grid[i, j] = new EmptyCell();
                 }
@@ -35,7 +36,7 @@ namespace OODGame.Room
                 grid[i, Width - 1] = new WallCell();
             }
 
-            for (int j = 0; j < Width; j++)
+            for (int j = 1; j < Width-1; j++)
             {
                 grid[0, j] = new WallCell();
                 grid[Height - 1, j] = new WallCell();
@@ -59,6 +60,7 @@ namespace OODGame.Room
         public bool CanEnter(int x, int y) =>
             IsInside(x, y) && grid[y, x].CanEnter;
 
+/*
         public void Draw(int playerX, int playerY)
         {
 
@@ -77,7 +79,11 @@ namespace OODGame.Room
                     
                 }
                 Console.WriteLine();
+
             }
         }
+*/
+
+        
     }
 }
