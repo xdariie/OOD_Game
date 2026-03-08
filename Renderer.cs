@@ -6,19 +6,25 @@ namespace OODGame.UI
 {
     public sealed class Renderer
     {
+        private const int UiWidth = 40;
+        private const int InventoryStartRow = 20;
+        private const int InventoryMaxRows = 6;
+
         public void Draw(Room.Room room, Player.Player player)
         {
-            int uix = Room.Room.Width +3;
+            int uiX = Room.Room.Width + 3;
 
-            for(int y=0; y<Room.Room.Height; y++)
+            for (int y = 0; y < Room.Room.Height; y++)
             {
                 Console.SetCursorPosition(0, y);
                 DrawRoomRow(room, player, y);
-                Console.SetCursorPosition(uix, y);
-                Console.Write(GetUILine(y, player).PadRight(40));
 
-                
+                Console.SetCursorPosition(uiX, y);
+                Console.Write(GetUILine(y, room, player).PadRight(UiWidth));
             }
+
+            ClearInventoryArea(uiX);
+            DrawInventory(uiX, player);
         }
 
         private void DrawRoomRow(Room.Room room, Player.Player player, int y)
@@ -32,30 +38,81 @@ namespace OODGame.UI
             }
         }
 
-
-
-        private string GetUILine(int row, Player.Player player)
+        private string GetUILine(int row, Room.Room room, Player.Player player)
         {
+            var currentItem = room.PeekItemAt(player.X, player.Y);
+
             return row switch
             {
-                0 => "PLAYER",
-                3 => "ATTRIBUTES",
-                4 => $"Strength: {player.Strength}",
-                5 => $"Dexterity: {player.Dexterity}",
-                6 => $"Health: {player.Health}",
-                7 => $"Luck: {player.Luck}",
-                8 => $"Aggression: {player.Aggression}",
-                9 => $"Wisdom: {player.Wisdom}",
+                0 => "ATTRIBUTES",
+                1 => $"Strength: {player.Strength}",
+                2 => $"Dexterity: {player.Dexterity}",
+                3 => $"Health: {player.Health}",
+                4 => $"Luck: {player.Luck}",
+                5 => $"Aggression: {player.Aggression}",
+                6 => $"Wisdom: {player.Wisdom}",
 
-                11 => "HANDS",
-                12 => $"Left: {(player.LeftHand == null ? "-" : "item")}",
-                13 => $"Right: {(player.RightHand == null ? "-" : "item")}",
+                8 => "HANDS",
+                9 => $"Left: {(player.LeftHand == null ? "-" : player.LeftHand.Name)}",
+                10 => $"Right: {(player.RightHand == null ? "-" : player.RightHand.Name)}",
 
-                //15 => "WASD move",
-                //16 => "Q quit",
+                12 => "MONEY",
+                13 => $"Coins: {player.Coins}",
+                14 => $"Gold: {player.Gold}",
+
+                16 => "ITEM ON TILE",
+                17 => currentItem == null ? "-" : currentItem.Name,
+                18 => currentItem == null ? "" : currentItem.Description,
+
+                19 => "INVENTORY",
 
                 _ => ""
             };
+        }
+
+        private void ClearInventoryArea(int uiX)
+        {
+            for (int i = 0; i < InventoryMaxRows; i++)
+            {
+                Console.SetCursorPosition(uiX, InventoryStartRow + i);
+                Console.Write(new string(' ', UiWidth));
+            }
+        }
+
+        private void DrawInventory(int uiX, Player.Player player)
+        {
+            int currentRow = InventoryStartRow;
+            int currentColumn = uiX;
+
+            if (player.Inventory.Items.Count == 0)
+            {
+                Console.SetCursorPosition(uiX, InventoryStartRow);
+                Console.Write("empty".PadRight(UiWidth));
+                return;
+            }
+
+            foreach (var item in player.Inventory.Items)
+            {
+                string text = item.Name + "  ";
+
+                if (currentColumn + text.Length > uiX + UiWidth)
+                {
+                    currentRow++;
+                    currentColumn = uiX;
+                }
+
+                if (currentRow >= InventoryStartRow + InventoryMaxRows)
+                {
+                    Console.SetCursorPosition(uiX, InventoryStartRow + InventoryMaxRows - 1);
+                    Console.Write("...".PadRight(UiWidth));
+                    break;
+                }
+
+                Console.SetCursorPosition(currentColumn, currentRow);
+                Console.Write(text);
+
+                currentColumn += text.Length;
+            }
         }
     }
 }

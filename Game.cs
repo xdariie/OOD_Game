@@ -25,7 +25,7 @@ namespace OODGame.Game
             int lastH = Console.WindowHeight;
 
             
-            while (true)
+            while (isRunning)
             {
 
                 if (Console.WindowWidth != lastW || Console.WindowHeight != lastH)
@@ -40,25 +40,55 @@ namespace OODGame.Game
 
                 //Console.SetCursorPosition(Room.Room.Width+1, 0);
 
-                Console.WriteLine();
+                // Console.WriteLine();
 
-                Console.WriteLine("WASD to move | Press Q to quit.");
+                // Console.WriteLine("WASD to move | Press Q to quit.");
+                // Console.WriteLine("E — pick up to hand | Z — move left hand item to inventory | X — move right hand item to inventory | U — unequip left hand | I — unequip right hand | O — drop last inventory item | Q — quit");
 
+                DrawHelp();
 
                 //Console.WriteLine($"Strength:{player.Strength} Dexterity:{player.Dexterity} Health:{player.Health} " +
                  //   $"Luck:{player.Luck} Aggression:{player.Aggression} Wisdom:{player.Wisdom}");
 
+                
                 var key = Console.ReadKey(true);
 
-                if (key.Key == ConsoleKey.Q) break;
+                // if (key.Key == ConsoleKey.E)
+                // {
+                //     PickUpItem();
+                //     continue;
+                // }
 
-                TryMovePlayer(key);
+
+                // if (key.Key == ConsoleKey.Q) break;
+
+                // TryMovePlayer(key);
+
+                HandleKey(key);
             }
         }
 
+        private void DrawHelp()
+        {
+            int startRow = Room.Room.Height + 1;
+            int width = Console.WindowWidth;
 
-            private void TryMovePlayer(ConsoleKeyInfo key)
-            {
+            Console.SetCursorPosition(0, startRow);
+            Console.Write("WASD - move | Q - quit".PadRight(width));
+
+            Console.SetCursorPosition(0, startRow + 1);
+            Console.Write("E - pick up to hand | Z - left hand -> inventory | X - right hand -> inventory".PadRight(width));
+
+            Console.SetCursorPosition(0, startRow + 2);
+            Console.Write("L - equip to left hand | R - equip to right hand | O - drop last inventory item".PadRight(width));
+
+            Console.SetCursorPosition(0, startRow + 3);
+            Console.Write("C - drop left hand | V - drop right hand".PadRight(width));
+        }
+
+
+        private void TryMovePlayer(ConsoleKeyInfo key)
+        {
             int dx = 0, dy = 0;
             switch (key.Key)
             {
@@ -74,6 +104,100 @@ namespace OODGame.Game
 
             if (room.CanEnter(newX, newY)) player.MoveTo(newX, newY);
             
+        }
+
+        private void PickUpItem()
+        {
+            var item = room.PeekItemAt(player.X, player.Y);
+
+            if (item == null)
+                return;
+
+            if (item.TryPickUp(player))
+            {
+                room.TakeItemAt(player.X, player.Y);
+            }
+        }
+
+        private bool isRunning = true;
+
+        private void DropSelectedItem()
+        {
+            var item = player.DropLastInventoryItem();
+
+            if (item != null)
+            {
+                room.AddItemAt(player.X, player.Y, item);
+            }
+        }
+
+        private void DropLeftHandItem()
+        {
+            var item = player.DropLeftHandItem();
+
+            if (item != null)
+            {
+                room.AddItemAt(player.X, player.Y, item);
+            }
+        }
+
+        private void DropRightHandItem()
+        {
+            var item = player.DropRightHandItem();
+
+            if (item != null)
+            {
+                room.AddItemAt(player.X, player.Y, item);
+            }
+        }
+
+        private void HandleKey(ConsoleKeyInfo key)
+        {
+            switch (key.Key)
+            {
+                case ConsoleKey.Q:
+                    isRunning = false;
+                    break;
+
+                case ConsoleKey.W:
+                case ConsoleKey.A:
+                case ConsoleKey.S:
+                case ConsoleKey.D:
+                    TryMovePlayer(key);
+                    break;
+
+                case ConsoleKey.E:
+                    PickUpItem();
+                    break;
+
+                case ConsoleKey.L:
+                    player.TryEquipAnyItemToLeft();
+                    break;
+
+                case ConsoleKey.R:
+                    player.TryEquipAnyItemToRight();
+                    break;
+
+                case ConsoleKey.C:
+                    DropLeftHandItem();
+                    break;
+
+                case ConsoleKey.V:
+                    DropRightHandItem();
+                    break;
+
+                case ConsoleKey.Z:
+                    player.MoveLeftHandToInventory();
+                    break;
+
+                case ConsoleKey.X:
+                    player.MoveRightHandToInventory();
+                    break;
+
+                case ConsoleKey.O:
+                    DropSelectedItem();
+                    break;
+            }
         }
     }
 }

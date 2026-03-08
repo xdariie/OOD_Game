@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using OODGame.Items;
 
 namespace OODGame.Room
 {
@@ -16,9 +17,6 @@ namespace OODGame.Room
             Initialize();
         }
 
-        public char GetSymbol(int x, int y){
-            return grid[y, x].Symbol;
-        }
 
         private void Initialize()
         {
@@ -53,6 +51,21 @@ namespace OODGame.Room
                 grid[16, j] = new WallCell();
             }
 
+            PlaceItems();
+
+        }
+
+        //adding some test items
+        private void PlaceItems()
+        {
+            AddItemAt(2, 2, new Coin());
+            AddItemAt(5, 2, new Gold());
+            AddItemAt(7, 3, new Sword());
+            AddItemAt(10, 5, new Dagger());
+            AddItemAt(14, 10, new GreatSword());
+            AddItemAt(20, 4, new Rock());
+            AddItemAt(23, 7, new BrokenBottle());
+            AddItemAt(28, 12, new OldStick());
         }
 
         public bool IsInside(int x, int y)
@@ -60,6 +73,44 @@ namespace OODGame.Room
         public bool CanEnter(int x, int y) =>
             IsInside(x, y) && grid[y, x].CanEnter;
 
+        public char GetSymbol(int x, int y)
+        {
+            Item? item = grid[y, x].PeekFirstItem();
+
+            if (item != null)
+                return item.Symbol;
+
+            return grid[y, x].Symbol;
+        }
+        public void AddItemAt(int x, int y, Item item)
+        {
+            if (IsInside(x, y))
+                grid[y, x].AddItem(item);
+        }
+
+        public Item? TakeItemAt(int x, int y)
+        {
+            if (!IsInside(x, y))
+                return null;
+
+            return grid[y, x].TakeFirstItem();
+        }
+
+        public Item? PeekItemAt(int x, int y)
+        {
+            if (!IsInside(x, y))
+                return null;
+
+            return grid[y, x].PeekFirstItem();
+        }
+
+        // public bool HasItemAt(int x, int y)
+        // {
+        //     if (!IsInside(x, y))
+        //         return false;
+
+        //     return grid[y, x].HasItems();
+        // }
 /*
         public void Draw(int playerX, int playerY)
         {
