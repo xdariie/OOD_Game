@@ -12,10 +12,10 @@ namespace OODGame.Items
             return false;
         }
 
-        public virtual bool TryMoveToInventory(Player.Player player)
-        {
-            return false;
-        }
+        // public virtual bool TryMoveToInventory(Player.Player player)
+        // {
+        //     return false;
+        // }
 
         public virtual bool TryEquipToLeft(Player.Player player)
         {

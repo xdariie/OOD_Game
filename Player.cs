@@ -169,7 +169,7 @@ namespace OODGame.Player
         }
 
 
-        public bool TryEquipAnyItemToLeft()
+        public void TryEquipAnyItemToLeft()
         {
             Item? itemToEquip = null;
 
@@ -183,13 +183,12 @@ namespace OODGame.Player
             }
 
             if (itemToEquip == null)
-                return false;
+                return;
 
             Inventory.Remove(itemToEquip);
-            return true;
         }
 
-        public bool TryEquipAnyItemToRight()
+        public void TryEquipAnyItemToRight()
         {
             Item? itemToEquip = null;
 
@@ -203,16 +202,12 @@ namespace OODGame.Player
             }
 
             if (itemToEquip == null)
-                return false;
+                return;
 
             Inventory.Remove(itemToEquip);
-            return true;
         }
 
-        
-
-
-
+     
         public Item? DropLastInventoryItem()
         {
             return Inventory.TakeLastItem();
@@ -232,21 +227,30 @@ namespace OODGame.Player
                 items.Add(item);
             }
 
-            public Item? TakeLastItem()
-            {
-                if (items.Count == 0)
-                    return null;
+        public Item? TakeLastItem()
+        {
+            if (items.Count == 0)
+                return null;
 
-                int lastIndex = items.Count - 1;
-                Item item = items[lastIndex];
-                items.RemoveAt(lastIndex);
-                return item;
-            }
+            int lastIndex = items.Count - 1;
+            Item item = items[lastIndex];
+            items.RemoveAt(lastIndex);
+            return item;
+        }
 
 
-            public bool Remove(Item item)
-            {
-                return items.Remove(item);
-            }
+        public bool Remove(Item item)
+        {
+            return items.Remove(item);
+        }
+        public Item? RemoveAt(int index)
+        {
+            if (index < 0 || index >= items.Count)
+                return null;
+
+            Item item = items[index];
+            items.RemoveAt(index);
+            return item;
+        }
     }
 }

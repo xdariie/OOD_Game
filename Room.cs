@@ -16,6 +16,10 @@ namespace OODGame.Room
         {
             Initialize();
         }
+        public Room(Cell[,] preparedGrid)
+        {
+            grid = preparedGrid;
+        }
 
 
         private void Initialize()

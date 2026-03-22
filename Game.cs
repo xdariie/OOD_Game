@@ -5,15 +5,51 @@ using System.Text;
 using OODGame.Room;
 using OODGame.Player;
 using OODGame.UI;
+using OODGame.Builders;
+using OODGame.Directors;
+using OODGame.Dungeon;
+using OODGame.Input;
 
 namespace OODGame.Game
 {
     public sealed class Game
     {
-        private readonly Room.Room room = new Room.Room();
+        private readonly Room.Room room;
         private readonly Player.Player player = new Player.Player(1,1);
         private readonly Renderer renderer = new Renderer();
+        private readonly DungeonFeatures features;
+        private readonly Dictionary<ConsoleKey, Action> actions = new Dictionary<ConsoleKey, Action>();
+        private readonly Actions gameActions;
+        
 
+        private bool isRunning = true;
+
+
+        public Game()
+        {
+            (room, features) = BuildRoomFromDungeon();
+            gameActions = new Actions(room, player, StopGame);
+        }
+
+        private void StopGame()
+        {
+            isRunning = false;
+        }
+
+
+
+        private (Room.Room, DungeonFeatures features) BuildRoomFromDungeon()
+        {
+            DungeonBuilder builder = new DungeonBuilder(Room.Room.Width, Room.Room.Height);
+            DungeonDirector director = new DungeonDirector();
+
+            director.BuildCentralRoomDungeon(builder);
+
+            Room.Room builtRoom = new Room.Room(builder.GetDungeon().ToRoomGrid());
+            DungeonFeatures builtFeatures = builder.GetFeatures();
+
+            return (builtRoom, builtFeatures);
+        }
         public void Run()
         {
             //console settings for stable rendering
@@ -34,37 +70,14 @@ namespace OODGame.Game
                     lastH = Console.WindowHeight;
                     Console.Clear();
                 }
-                //Console.SetCursorPosition(0, 0);
+                
                 renderer.Draw(room, player);
-                //room.Draw(player.X, player.Y);
-
-                //Console.SetCursorPosition(Room.Room.Width+1, 0);
-
-                // Console.WriteLine();
-
-                // Console.WriteLine("WASD to move | Press Q to quit.");
-                // Console.WriteLine("E — pick up to hand | Z — move left hand item to inventory | X — move right hand item to inventory | U — unequip left hand | I — unequip right hand | O — drop last inventory item | Q — quit");
-
                 DrawHelp();
-
-                //Console.WriteLine($"Strength:{player.Strength} Dexterity:{player.Dexterity} Health:{player.Health} " +
-                 //   $"Luck:{player.Luck} Aggression:{player.Aggression} Wisdom:{player.Wisdom}");
-
+                Console.SetCursorPosition(0, Room.Room.Height + 5);
+                Console.Write(gameActions.Message.PadRight(Console.WindowWidth));
                 
                 var key = Console.ReadKey(true);
-
-                // if (key.Key == ConsoleKey.E)
-                // {
-                //     PickUpItem();
-                //     continue;
-                // }
-
-
-                // if (key.Key == ConsoleKey.Q) break;
-
-                // TryMovePlayer(key);
-
-                HandleKey(key);
+                gameActions.HandleKey(key);
             }
         }
 
@@ -73,131 +86,63 @@ namespace OODGame.Game
             int startRow = Room.Room.Height + 1;
             int width = Console.WindowWidth;
 
-            Console.SetCursorPosition(0, startRow);
-            Console.Write("WASD - move | Q - quit".PadRight(width));
+            List<string> lines = gameActions.GetAvailableActionLines();
 
-            Console.SetCursorPosition(0, startRow + 1);
-            Console.Write("E - pick up to hand | Z - left hand -> inventory | X - right hand -> inventory".PadRight(width));
-
-            Console.SetCursorPosition(0, startRow + 2);
-            Console.Write("L - equip to left hand | R - equip to right hand | O - drop last inventory item".PadRight(width));
-
-            Console.SetCursorPosition(0, startRow + 3);
-            Console.Write("C - drop left hand | V - drop right hand".PadRight(width));
-        }
-
-
-        private void TryMovePlayer(ConsoleKeyInfo key)
-        {
-            int dx = 0, dy = 0;
-            switch (key.Key)
+            for (int i = 0; i < 4; i++)
             {
-                case ConsoleKey.W: dy = -1; break;
-                case ConsoleKey.S: dy = 1; break;
-                case ConsoleKey.A: dx = -1; break;
-                case ConsoleKey.D: dx = 1; break;
-                default: return;
-            }
+                Console.SetCursorPosition(0, startRow + i);
 
-            int newX = player.X + dx;
-            int newY = player.Y + dy;
-
-            if (room.CanEnter(newX, newY)) player.MoveTo(newX, newY);
-            
-        }
-
-        private void PickUpItem()
-        {
-            var item = room.PeekItemAt(player.X, player.Y);
-
-            if (item == null)
-                return;
-
-            if (item.TryPickUp(player))
-            {
-                room.TakeItemAt(player.X, player.Y);
+                if (i < lines.Count)
+                    Console.Write(lines[i].PadRight(width));
+                else
+                    Console.Write(new string(' ', width));
             }
         }
 
-        private bool isRunning = true;
 
-        private void DropSelectedItem()
+        private string BuildHelpLine1()
         {
-            var item = player.DropLastInventoryItem();
+            List<string> parts = new List<string>();
 
-            if (item != null)
+            if (features.HasItems || features.HasWeapons)
             {
-                room.AddItemAt(player.X, player.Y, item);
+                parts.Add("E - pick up to hand");
+                parts.Add("Z - left hand -> inventory");
+                parts.Add("X - right hand -> inventory");
             }
+
+            return string.Join(" | ", parts);
         }
 
-        private void DropLeftHandItem()
+        private string BuildHelpLine2()
         {
-            var item = player.DropLeftHandItem();
+            List<string> parts = new List<string>();
 
-            if (item != null)
+            if (features.HasWeapons)
             {
-                room.AddItemAt(player.X, player.Y, item);
+                parts.Add("L - equip to left hand");
+                parts.Add("R - equip to right hand");
             }
+
+            if (features.HasItems || features.HasWeapons)
+            {
+                parts.Add("O - drop last inventory item");
+            }
+
+            return string.Join(" | ", parts);
         }
 
-        private void DropRightHandItem()
+        private string BuildHelpLine3()
         {
-            var item = player.DropRightHandItem();
+            List<string> parts = new List<string>();
 
-            if (item != null)
+            if (features.HasItems || features.HasWeapons)
             {
-                room.AddItemAt(player.X, player.Y, item);
+                parts.Add("C - drop left hand");
+                parts.Add("V - drop right hand");
             }
-        }
 
-        private void HandleKey(ConsoleKeyInfo key)
-        {
-            switch (key.Key)
-            {
-                case ConsoleKey.Q:
-                    isRunning = false;
-                    break;
-
-                case ConsoleKey.W:
-                case ConsoleKey.A:
-                case ConsoleKey.S:
-                case ConsoleKey.D:
-                    TryMovePlayer(key);
-                    break;
-
-                case ConsoleKey.E:
-                    PickUpItem();
-                    break;
-
-                case ConsoleKey.L:
-                    player.TryEquipAnyItemToLeft();
-                    break;
-
-                case ConsoleKey.R:
-                    player.TryEquipAnyItemToRight();
-                    break;
-
-                case ConsoleKey.C:
-                    DropLeftHandItem();
-                    break;
-
-                case ConsoleKey.V:
-                    DropRightHandItem();
-                    break;
-
-                case ConsoleKey.Z:
-                    player.MoveLeftHandToInventory();
-                    break;
-
-                case ConsoleKey.X:
-                    player.MoveRightHandToInventory();
-                    break;
-
-                case ConsoleKey.O:
-                    DropSelectedItem();
-                    break;
-            }
+            return string.Join(" | ", parts);
         }
     }
 }
